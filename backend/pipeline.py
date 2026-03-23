@@ -33,6 +33,10 @@ class VisitorPipeline:
         self.recognizer = FaceRecognizer()
         self.registry = FaceRegistry(self.db, config.recognizer.similarity_threshold)
         self.tracker = TrackManager(config.tracker.max_lost_frames)
+        self.is_running = True
+
+    def stop(self) -> None:
+        self.is_running = False
 
     def run(self, source: str | None = None) -> int:
         capture_source = source or self.config.input_source
@@ -45,7 +49,7 @@ class VisitorPipeline:
             raise RuntimeError(f"Unable to open video source: {capture_source}")
 
         frame_index = 0
-        while True:
+        while self.is_running:
             ok, frame = capture.read()
             if not ok:
                 break

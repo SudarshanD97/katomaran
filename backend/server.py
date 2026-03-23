@@ -6,7 +6,9 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import threading
-from fastapi import FastAPI
+import shutil
+from pathlib import Path
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from .config import load_config
 from .pipeline import VisitorPipeline
@@ -22,17 +24,19 @@ app.add_middleware(
 )
 
 pipeline_instance = None
+pipeline_thread = None
 
-def run_pipeline():
+def run_pipeline(source=None):
     global pipeline_instance
     try:
-        print("Starting video pipeline...")
+        print(f"Starting video pipeline with source: {source}...")
         config = load_config("backend/config.json")
         pipeline_instance = VisitorPipeline(config)
         
-        # Override source from environment so RTSP can be tested without code changes
-        source = os.environ.get("INPUT_SOURCE", None)
-        
+        # Override source from environment if not explicitly passed
+        if source is None:
+            source = os.environ.get("INPUT_SOURCE", None)
+            
         pipeline_instance.run(source)
         print("Pipeline finished.")
     except Exception as e:
@@ -40,15 +44,49 @@ def run_pipeline():
 
 @app.on_event("startup")
 def startup_event():
-    thread = threading.Thread(target=run_pipeline, daemon=True)
-    thread.start()
+    global pipeline_thread
+    source = os.environ.get("INPUT_SOURCE", None)
+    if source:
+        # Only auto-start if an explicitly defined source exists
+        thread = threading.Thread(target=run_pipeline, args=(source,), daemon=True)
+        thread.start()
+        pipeline_thread = thread
 
 @app.get("/")
 def health_check():
     return {
         "status": "ok", 
-        "message": "Face tracker background pipeline is running."
+        "message": "Face tracker API is running."
     }
+
+@app.post("/api/set-source")
+async def set_source(url: str = Form(None), file: UploadFile = File(None)):
+    global pipeline_instance, pipeline_thread
+    
+    if pipeline_instance:
+        pipeline_instance.stop()
+        if pipeline_thread:
+            pipeline_thread.join(timeout=3.0) 
+            
+    source_to_use = None
+    if file and file.filename:
+        upload_dir = Path("backend/uploads")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        file_path = upload_dir / file.filename
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        source_to_use = str(file_path)
+    elif url:
+        source_to_use = url
+        
+    if not source_to_use:
+        return {"error": "No valid source provided"}
+        
+    thread = threading.Thread(target=run_pipeline, args=(source_to_use,), daemon=True)
+    thread.start()
+    pipeline_thread = thread
+    
+    return {"status": "success", "source": source_to_use}
 
 @app.get("/stats")
 def get_stats():

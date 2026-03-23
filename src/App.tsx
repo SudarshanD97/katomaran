@@ -107,6 +107,45 @@ function App() {
   const [skipFrames, setSkipFrames] = useState(4);
   const [activeTab, setActiveTab] = useState<"overview" | "config" | "schema">("overview");
 
+  const [sourceType, setSourceType] = useState<"file" | "url">("url");
+  const [rtspUrl, setRtspUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sourceMessage, setSourceMessage] = useState("");
+
+  const handleSetSource = async () => {
+    setIsSubmitting(true);
+    setSourceMessage("");
+    try {
+      const url = import.meta.env.VITE_API_URL || "https://sudarshan3-face-tracker.hf.space";
+      const formData = new FormData();
+      if (sourceType === "file" && videoFile) {
+        formData.append("file", videoFile);
+      } else if (sourceType === "url" && rtspUrl) {
+        formData.append("url", rtspUrl);
+      } else {
+        setSourceMessage("Please provide a valid input.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const res = await fetch(`${url}/api/set-source`, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setSourceMessage(data.status === "success" ? "Pipeline connected and running!" : "Failed to connect.");
+      } else {
+        setSourceMessage("Error connecting to backend.");
+      }
+    } catch (err) {
+      setSourceMessage("Network error.");
+    }
+    setIsSubmitting(false);
+  };
+
   const frameRate = 30;
   const detectionPasses = useMemo(() => frameRate / (skipFrames + 1), [skipFrames]);
   const relativeLoad = useMemo(() => Math.max(18, Math.round(100 / (skipFrames + 1))), [skipFrames]);
@@ -282,20 +321,68 @@ function App() {
                 </div>
 
                 <div className="grid md:grid-cols-[1fr_280px]">
-                  {/* Video Preview */}
-                  <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-                    <iframe 
-                      className="absolute inset-0 w-full h-full"
-                      src="https://www.youtube.com/embed/LXb3EKWsInQ?autoplay=1&mute=1&loop=1&playlist=LXb3EKWsInQ" 
-                      title="Demo Video Placeholder" 
-                      frameBorder="0" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowFullScreen>
-                    </iframe>
-                    {/* NOTE: Replace the src above with your Loom/YouTube link */}
-                    <div className="absolute bottom-4 right-4 rounded-lg bg-white/90 px-3 py-2 shadow-lg backdrop-blur z-10">
-                      <div className="text-xs text-[#1d1d1f]/50">Skip</div>
-                      <div className="text-lg font-semibold text-[#1d1d1f]">{skipFrames} frames</div>
+                  {/* Source Configurator */}
+                  <div className="relative aspect-video bg-gray-50 flex items-center justify-center overflow-hidden p-6 border-r border-black/5">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm border border-black/5">
+                      <h3 className="text-lg font-semibold text-[#1d1d1f] mb-4">Pipeline Source</h3>
+                      
+                      <div className="flex rounded-lg bg-gray-100 p-1 mb-4">
+                        <button
+                          onClick={() => setSourceType("url")}
+                          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-all ${
+                            sourceType === "url" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-900"
+                          }`}
+                        >
+                          RTSP Link
+                        </button>
+                        <button
+                          onClick={() => setSourceType("file")}
+                          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-all ${
+                            sourceType === "file" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-900"
+                          }`}
+                        >
+                          Video Upload
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {sourceType === "url" ? (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Camera Stream URL</label>
+                            <input
+                              type="text"
+                              value={rtspUrl}
+                              onChange={(e) => setRtspUrl(e.target.value)}
+                              placeholder="rtsp://admin:pass@192.168.1.10..."
+                              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Local MP4 File</label>
+                            <input
+                              type="file"
+                              accept="video/mp4"
+                              onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                              className="w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-600 hover:file:bg-blue-100"
+                            />
+                          </div>
+                        )}
+
+                        <button
+                          disabled={isSubmitting}
+                          onClick={handleSetSource}
+                          className="w-full rounded-lg bg-[#1d1d1f] py-2 text-sm font-medium text-white transition-all hover:bg-[#1d1d1f]/80 disabled:opacity-50"
+                        >
+                          {isSubmitting ? "Connecting..." : "Launch Pipeline"}
+                        </button>
+
+                        {sourceMessage && (
+                          <div className={`text-center text-xs font-medium ${sourceMessage.includes("Error") || sourceMessage.includes("Failed") || sourceMessage.includes("Please") ? "text-red-500" : "text-green-500"}`}>
+                            {sourceMessage}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

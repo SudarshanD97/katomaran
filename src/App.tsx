@@ -148,7 +148,7 @@ function App() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const url = import.meta.env.VITE_API_URL || "http://localhost:10000";
+        const url = import.meta.env.VITE_API_URL || "https://sudarshan3-face-tracker.hf.space";
         const res = await fetch(`${url}/stats`);
         if (res.ok) {
           const data = await res.json();

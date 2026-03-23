@@ -1,0 +1,3 @@
+2026-03-23T11:58:02.441Z | ENTRY | visitor_id=V-014 | track=31 | score=0.91 | logs/entries/2026-03-23/V-014_115802.jpg
+2026-03-23T11:58:07.109Z | RECOGNIZED | visitor_id=V-014 | track=31 | similarity=0.97 | registry=matched
+2026-03-23T11:58:18.812Z | EXIT | visitor_id=V-014 | track=31 | grace_frames=18 | logs/exits/2026-03-23/V-014_115818.jpg

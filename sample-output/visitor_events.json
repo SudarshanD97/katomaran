@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "visitor_id": "V-014",
+    "event_type": "entry",
+    "timestamp": "2026-03-23T11:58:02.441Z",
+    "track_id": "31",
+    "image_path": "logs/entries/2026-03-23/V-014_115802.jpg",
+    "embedding_hash": "d8f1e0a8f1f7b1f5",
+    "source": "sample_video.mp4"
+  },
+  {
+    "id": 2,
+    "visitor_id": "V-014",
+    "event_type": "exit",
+    "timestamp": "2026-03-23T11:58:18.812Z",
+    "track_id": "31",
+    "image_path": "logs/exits/2026-03-23/V-014_115818.jpg",
+    "embedding_hash": "d8f1e0a8f1f7b1f5",
+    "source": "sample_video.mp4"
+  }
+]

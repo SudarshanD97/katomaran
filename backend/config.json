@@ -1,0 +1,23 @@
+{
+  "input_source": "sample_video.mp4",
+  "rtsp_fallback": "rtsp://camera/stream",
+  "detection_skip_frames": 4,
+  "detector": {
+    "model": "yolov8n-face.pt",
+    "confidence_threshold": 0.45,
+    "iou_threshold": 0.5
+  },
+  "recognizer": {
+    "model": "InsightFace / ArcFace",
+    "similarity_threshold": 0.42,
+    "register_on_first_seen": true
+  },
+  "tracker": {
+    "algorithm": "ByteTrack-like IoU tracker",
+    "max_lost_frames": 18
+  },
+  "storage": {
+    "db": "backend/data/visitors.sqlite",
+    "logs_dir": "backend/logs"
+  }
+}

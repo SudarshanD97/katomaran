@@ -137,6 +137,11 @@ uvicorn backend.server:app --host 127.0.0.1 --port 7860 --reload
 
 The frontend expects `VITE_API_URL` to point to your backend (see `.env.example`).
 
+### Direct Pipeline (Local)
+```powershell
+./run_direct_pipeline.ps1
+```
+
 Use Python 3.11+ with the following packages:
 
 - `opencv-python`

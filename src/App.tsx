@@ -114,57 +114,12 @@ function App() {
   const [sourceMessage, setSourceMessage] = useState("");
 
   const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
-  const [resolvedApiUrl, setResolvedApiUrl] = useState<string | null>(null);
 
   const normalizeBaseUrl = (v: string) => v.replace(/\/+$/, "");
-  const apiBaseUrl =
-    normalizeBaseUrl(
-      configuredApiUrl || resolvedApiUrl || "https://sudarshan3-face-tracker.hf.space"
-    ) || "https://sudarshan3-face-tracker.hf.space";
 
-  useEffect(() => {
-    // If an API URL is explicitly configured, don't probe. This keeps behavior predictable.
-    if (configuredApiUrl) return;
-
-    let cancelled = false;
-    const candidates = [
-      typeof window !== "undefined" ? window.location.origin : "",
-      "http://localhost:7860",
-      "http://127.0.0.1:7860",
-      "http://localhost:8000",
-      "https://sudarshan3-face-tracker.hf.space",
-    ].filter(Boolean);
-
-    const resolve = async () => {
-      for (const candidate of candidates) {
-        const base = normalizeBaseUrl(candidate);
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => controller.abort(), 900);
-        try {
-          // Probe a backend-specific endpoint so we don't accidentally match the frontend dev server.
-          const res = await fetch(`${base}/stats`, {
-            method: "GET",
-            signal: controller.signal,
-            mode: "cors",
-          });
-          if (res.ok) {
-            if (!cancelled) setResolvedApiUrl(base);
-            return;
-          }
-        } catch {
-          // Ignore and try the next candidate.
-        } finally {
-          window.clearTimeout(timer);
-        }
-      }
-      if (!cancelled) setResolvedApiUrl(null);
-    };
-
-    resolve();
-    return () => {
-      cancelled = true;
-    };
-  }, [configuredApiUrl]);
+  // Direct local pipeline: default to the backend running at localhost:7860.
+  // If you want a different backend, set `VITE_API_URL`.
+  const apiBaseUrl = normalizeBaseUrl(configuredApiUrl) || "http://localhost:7860";
 
   const handleSetSource = async () => {
     setIsSubmitting(true);
@@ -241,9 +196,6 @@ function App() {
   const [stats, setStats] = useState({ unique_visitors: 0, currently_inside: 0, detection_rate: 0 });
 
   useEffect(() => {
-    // Wait for API resolution when VITE_API_URL is not set.
-    if (!configuredApiUrl && !resolvedApiUrl) return;
-
     const fetchStats = async () => {
       try {
         const res = await fetch(`${apiBaseUrl}/stats`);
@@ -265,7 +217,7 @@ function App() {
     fetchStats();
     const interval = setInterval(fetchStats, 2000);
     return () => clearInterval(interval);
-  }, [configuredApiUrl, resolvedApiUrl, apiBaseUrl]);
+  }, [apiBaseUrl]);
 
   return (
     <div className="bg-[#fbfbfd] text-[#1d1d1f]">

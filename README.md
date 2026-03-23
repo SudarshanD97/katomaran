@@ -126,7 +126,16 @@ npm install
 npm run dev
 ```
 
-### Backend recommendation
+### Backend (FastAPI, local)
+```bash
+# From the repo root:
+python -m venv .venv
+./venv/Scripts/Activate.ps1  # Windows (PowerShell)
+pip install -r backend/requirements.txt
+uvicorn backend.server:app --host 127.0.0.1 --port 7860 --reload
+```
+
+The frontend expects `VITE_API_URL` to point to your backend (see `.env.example`).
 
 Use Python 3.11+ with the following packages:
 

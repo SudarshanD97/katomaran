@@ -8,7 +8,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 import threading
 import shutil
 from pathlib import Path
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .config import load_config
 from .pipeline import VisitorPipeline
@@ -72,7 +72,9 @@ async def set_source(url: str = Form(None), file: UploadFile = File(None)):
     if file and file.filename:
         upload_dir = Path("backend/uploads")
         upload_dir.mkdir(parents=True, exist_ok=True)
-        file_path = upload_dir / file.filename
+        # Prevent path traversal by keeping only the basename.
+        safe_filename = Path(file.filename).name
+        file_path = upload_dir / safe_filename
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         source_to_use = str(file_path)
@@ -80,7 +82,7 @@ async def set_source(url: str = Form(None), file: UploadFile = File(None)):
         source_to_use = url
         
     if not source_to_use:
-        return {"error": "No valid source provided"}
+        raise HTTPException(status_code=400, detail="No valid source provided")
         
     thread = threading.Thread(target=run_pipeline, args=(source_to_use,), daemon=True)
     thread.start()

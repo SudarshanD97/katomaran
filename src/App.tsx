@@ -113,11 +113,63 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sourceMessage, setSourceMessage] = useState("");
 
+  const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+  const [resolvedApiUrl, setResolvedApiUrl] = useState<string | null>(null);
+
+  const normalizeBaseUrl = (v: string) => v.replace(/\/+$/, "");
+  const apiBaseUrl =
+    normalizeBaseUrl(
+      configuredApiUrl || resolvedApiUrl || "https://sudarshan3-face-tracker.hf.space"
+    ) || "https://sudarshan3-face-tracker.hf.space";
+
+  useEffect(() => {
+    // If an API URL is explicitly configured, don't probe. This keeps behavior predictable.
+    if (configuredApiUrl) return;
+
+    let cancelled = false;
+    const candidates = [
+      typeof window !== "undefined" ? window.location.origin : "",
+      "http://localhost:7860",
+      "http://127.0.0.1:7860",
+      "http://localhost:8000",
+      "https://sudarshan3-face-tracker.hf.space",
+    ].filter(Boolean);
+
+    const resolve = async () => {
+      for (const candidate of candidates) {
+        const base = normalizeBaseUrl(candidate);
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 900);
+        try {
+          const res = await fetch(`${base}/`, {
+            method: "GET",
+            signal: controller.signal,
+            mode: "cors",
+          });
+          if (res.ok) {
+            if (!cancelled) setResolvedApiUrl(base);
+            return;
+          }
+        } catch {
+          // Ignore and try the next candidate.
+        } finally {
+          window.clearTimeout(timer);
+        }
+      }
+      if (!cancelled) setResolvedApiUrl(null);
+    };
+
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuredApiUrl]);
+
   const handleSetSource = async () => {
     setIsSubmitting(true);
     setSourceMessage("");
     try {
-      const url = import.meta.env.VITE_API_URL || "https://sudarshan3-face-tracker.hf.space";
+      const url = apiBaseUrl;
       const formData = new FormData();
       if (sourceType === "file" && videoFile) {
         formData.append("file", videoFile);
@@ -138,10 +190,13 @@ function App() {
         const data = await res.json();
         setSourceMessage(data.status === "success" ? "Pipeline connected and running!" : "Failed to connect.");
       } else {
-        setSourceMessage("Error connecting to backend.");
+        const body = await res.text().catch(() => "");
+        const snippet = body ? ` - ${body.slice(0, 200)}` : "";
+        setSourceMessage(`Error connecting to backend (${res.status})${snippet}`);
       }
     } catch (err) {
-      setSourceMessage("Network error.");
+      const msg = err instanceof Error ? err.message : String(err);
+      setSourceMessage(`Network error. ${msg}`);
     }
     setIsSubmitting(false);
   };
@@ -185,28 +240,31 @@ function App() {
   const [stats, setStats] = useState({ unique_visitors: 0, currently_inside: 0, detection_rate: 0 });
 
   useEffect(() => {
+    // Wait for API resolution when VITE_API_URL is not set.
+    if (!configuredApiUrl && !resolvedApiUrl) return;
+
     const fetchStats = async () => {
       try {
-        const url = import.meta.env.VITE_API_URL || "https://sudarshan3-face-tracker.hf.space";
-        const res = await fetch(`${url}/stats`);
+        const res = await fetch(`${apiBaseUrl}/stats`);
         if (res.ok) {
           const data = await res.json();
           if (data.unique_visitors !== undefined) {
-             setStats({
-               unique_visitors: data.unique_visitors,
-               currently_inside: data.currently_inside,
-               detection_rate: data.detection_rate
-             });
+            setStats({
+              unique_visitors: data.unique_visitors,
+              currently_inside: data.currently_inside,
+              detection_rate: data.detection_rate,
+            });
           }
         }
-      } catch (err) {
-         // Silently fail if backend is not running
+      } catch {
+        // Silently fail if backend is not running
       }
     };
+
     fetchStats();
     const interval = setInterval(fetchStats, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [configuredApiUrl, resolvedApiUrl, apiBaseUrl]);
 
   return (
     <div className="bg-[#fbfbfd] text-[#1d1d1f]">

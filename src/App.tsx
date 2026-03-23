@@ -141,7 +141,8 @@ function App() {
         const controller = new AbortController();
         const timer = window.setTimeout(() => controller.abort(), 900);
         try {
-          const res = await fetch(`${base}/`, {
+          // Probe a backend-specific endpoint so we don't accidentally match the frontend dev server.
+          const res = await fetch(`${base}/stats`, {
             method: "GET",
             signal: controller.signal,
             mode: "cors",

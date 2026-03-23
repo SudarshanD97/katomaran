@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const pipeline = [
   {
@@ -143,6 +143,32 @@ function App() {
     [skipFrames]
   );
 
+  const [stats, setStats] = useState({ unique_visitors: 0, currently_inside: 0, detection_rate: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const url = import.meta.env.VITE_API_URL || "http://localhost:10000";
+        const res = await fetch(`${url}/stats`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.unique_visitors !== undefined) {
+             setStats({
+               unique_visitors: data.unique_visitors,
+               currently_inside: data.currently_inside,
+               detection_rate: data.detection_rate
+             });
+          }
+        }
+      } catch (err) {
+         // Silently fail if backend is not running
+      }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="bg-[#fbfbfd] text-[#1d1d1f]">
       {/* Navigation */}
@@ -257,43 +283,17 @@ function App() {
 
                 <div className="grid md:grid-cols-[1fr_280px]">
                   {/* Video Preview */}
-                  <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-50 p-8">
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:32px_32px]" />
-                    
-                    {/* Simulated face detection boxes */}
-                    <motion.div
-                      className="absolute left-[15%] top-[20%] h-20 w-16 rounded-xl border-2 border-blue-500 bg-blue-500/5"
-                      animate={reduceMotion ? undefined : { y: [0, -4, 0], x: [0, 2, 0] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <div className="absolute -top-6 left-0 whitespace-nowrap rounded bg-blue-500 px-2 py-0.5 text-xs text-white">
-                        V-014 (0.94)
-                      </div>
-                    </motion.div>
-                    <motion.div
-                      className="absolute left-[45%] top-[25%] h-24 w-20 rounded-xl border-2 border-green-500 bg-green-500/5"
-                      animate={reduceMotion ? undefined : { y: [0, 5, 0], x: [0, -3, 0] }}
-                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <div className="absolute -top-6 left-0 whitespace-nowrap rounded bg-green-500 px-2 py-0.5 text-xs text-white">
-                        V-021 (0.91)
-                      </div>
-                    </motion.div>
-                    <motion.div
-                      className="absolute right-[15%] top-[18%] h-18 w-14 rounded-xl border-2 border-purple-500 bg-purple-500/5"
-                      animate={reduceMotion ? undefined : { y: [0, -3, 0], x: [0, 3, 0] }}
-                      transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <div className="absolute -top-6 left-0 whitespace-nowrap rounded bg-purple-500 px-2 py-0.5 text-xs text-white">
-                        NEW
-                      </div>
-                    </motion.div>
-
-                    <div className="absolute bottom-4 left-4 rounded-lg bg-white/90 px-3 py-2 shadow-lg backdrop-blur">
-                      <div className="text-xs text-[#1d1d1f]/50">Frame</div>
-                      <div className="text-lg font-semibold text-[#1d1d1f]">1,842</div>
-                    </div>
-                    <div className="absolute bottom-4 right-4 rounded-lg bg-white/90 px-3 py-2 shadow-lg backdrop-blur">
+                  <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+                    <iframe 
+                      className="absolute inset-0 w-full h-full"
+                      src="https://www.youtube.com/embed/LXb3EKWsInQ?autoplay=1&mute=1&loop=1&playlist=LXb3EKWsInQ" 
+                      title="Demo Video Placeholder" 
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allowFullScreen>
+                    </iframe>
+                    {/* NOTE: Replace the src above with your Loom/YouTube link */}
+                    <div className="absolute bottom-4 right-4 rounded-lg bg-white/90 px-3 py-2 shadow-lg backdrop-blur z-10">
                       <div className="text-xs text-[#1d1d1f]/50">Skip</div>
                       <div className="text-lg font-semibold text-[#1d1d1f]">{skipFrames} frames</div>
                     </div>
@@ -304,23 +304,23 @@ function App() {
                     <div className="space-y-5">
                       <div>
                         <div className="text-xs font-medium uppercase tracking-wider text-[#1d1d1f]/40">Unique Visitors</div>
-                        <div className="mt-1 text-4xl font-semibold text-[#1d1d1f]">128</div>
+                        <div className="mt-1 text-4xl font-semibold text-[#1d1d1f]">{stats.unique_visitors}</div>
                       </div>
                       <div className="h-px bg-black/5"></div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <div className="text-xs font-medium uppercase tracking-wider text-[#1d1d1f]/40">Entries</div>
-                          <div className="mt-1 text-2xl font-semibold text-green-600">142</div>
+                          <div className="mt-1 text-2xl font-semibold text-green-600">-</div>
                         </div>
                         <div>
                           <div className="text-xs font-medium uppercase tracking-wider text-[#1d1d1f]/40">Exits</div>
-                          <div className="mt-1 text-2xl font-semibold text-red-500">134</div>
+                          <div className="mt-1 text-2xl font-semibold text-red-500">-</div>
                         </div>
                       </div>
                       <div className="h-px bg-black/5"></div>
                       <div>
                         <div className="text-xs font-medium uppercase tracking-wider text-[#1d1d1f]/40">Currently Inside</div>
-                        <div className="mt-1 text-2xl font-semibold text-blue-600">8</div>
+                        <div className="mt-1 text-2xl font-semibold text-blue-600">{stats.currently_inside}</div>
                       </div>
                       <div className="h-px bg-black/5"></div>
                       <div>

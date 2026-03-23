@@ -5,3 +5,4 @@ insightface
 onnxruntime
 fastapi
 uvicorn
+python-multipart

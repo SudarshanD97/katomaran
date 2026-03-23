@@ -701,62 +701,7 @@ function App() {
           </div>
         </motion.section>
 
-        {/* Submission Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true, amount: 0.2 }}
-          className="py-24"
-        >
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="rounded-3xl bg-gradient-to-br from-[#1d1d1f] to-[#2d2d2f] p-8 text-white md:p-12">
-              <div className="grid gap-8 md:grid-cols-2">
-                <div>
-                  <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                    Ready for Submission
-                  </h2>
-                  <p className="mt-4 text-white/60">
-                    This project includes everything required by the hackathon guidelines, documented directly in this interface.
-                  </p>
-                  <ul className="mt-6 space-y-3 text-sm text-white/80">
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs">✓</span>
-                      Complete Python backend with YOLO + InsightFace
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs">✓</span>
-                      Configurable detection skip via config.json
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs">✓</span>
-                      SQLite database for event persistence
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs">✓</span>
-                      Structured filesystem logging with images
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs">✓</span>
-                      Apple-inspired documentation frontend
-                    </li>
-                  </ul>
-                </div>
-                <div className="flex flex-col justify-center">
-                  <div className="rounded-2xl bg-white/10 p-6 backdrop-blur">
-                    <h4 className="font-semibold text-white">Before Final Upload</h4>
-                    <ul className="mt-4 space-y-2 text-sm text-white/70">
-                      <li>• Replace video placeholder with your Loom/YouTube link</li>
-                      <li>• Generate sample outputs from the video file</li>
-                      <li>• Verify all logs and DB entries are populated</li>
-                      <li>• Test with RTSP stream for interview readiness</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
+
       </main>
 
       {/* Footer */}
